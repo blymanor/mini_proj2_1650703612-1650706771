@@ -2,7 +2,7 @@ import "./index.css";
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom/client";
 import {
-  createBrowserRouter,
+  createHashRouter,
   RouterProvider,
   Outlet,
   Link,
@@ -896,7 +896,8 @@ const AppLayout = () => (
   </div>
 );
 
-const router = createBrowserRouter([
+// Use hash-based router to avoid GitHub Pages 404 on refresh
+const router = createHashRouter([
   {
     path: "/",
     element: <AppLayout />,
