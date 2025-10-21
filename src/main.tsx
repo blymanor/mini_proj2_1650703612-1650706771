@@ -21,7 +21,7 @@ import { Provider, useSelector, useDispatch } from "react-redux";
 
 // --- CONFIGURATION ---
 // IMPORTANT: Get your own API key from https://spoonacular.com/food-api
-const SPOONACULAR_API_KEY = "5858c5783c6c48158be9ef77f7cfa76f";
+const SPOONACULAR_API_KEY = "5c449fe4217545e48cd681248dacc9e6";
 const API_BASE_URL = "https://api.spoonacular.com/recipes";
 
 // --- TYPES ---
