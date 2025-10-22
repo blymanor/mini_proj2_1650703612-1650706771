@@ -44,6 +44,7 @@ const transformSpoonacularRecipe = (apiRecipe: any): Recipe => {
   const cleanSummary = apiRecipe.summary
     ? apiRecipe.summary.replace(/<[^>]*>?/gm, "")
     : "No summary available.";
+
   let difficulty = "Medium";
   if (
     apiRecipe.readyInMinutes < 20 &&
@@ -56,6 +57,24 @@ const transformSpoonacularRecipe = (apiRecipe: any): Recipe => {
   ) {
     difficulty = "Hard";
   }
+
+  // Determine best available image. Try common fields, then a Spoonacular pattern,
+  // then fall back to a generated placeholder (with title).
+  const titleForPlaceholder = apiRecipe.title || "No Image";
+  const constructedSpoonacularImage =
+    apiRecipe.id != null
+      ? `https://spoonacular.com/recipeImages/${apiRecipe.id}-636x393.jpg`
+      : null;
+
+  const image =
+    apiRecipe.image ||
+    apiRecipe.imageUrl ||
+    apiRecipe.imageUrls?.[0] ||
+    constructedSpoonacularImage ||
+    `https://placehold.co/400x225/a7c957/ffffff?text=${encodeURIComponent(
+      titleForPlaceholder
+    )}`;
+
   return {
     id: String(apiRecipe.id),
     title: apiRecipe.title || "Untitled Recipe",
@@ -64,13 +83,12 @@ const transformSpoonacularRecipe = (apiRecipe: any): Recipe => {
     time: apiRecipe.readyInMinutes || 0,
     servings: apiRecipe.servings || 0,
     summary: cleanSummary,
-    image: apiRecipe.image,
+    image,
     ingredients:
       apiRecipe.extendedIngredients?.map((ing: any) => ing.original) || [],
     steps:
-      apiRecipe.analyzedInstructions?.[0]?.steps.map(
-        (step: any) => step.step
-      ) || [],
+      apiRecipe.analyzedInstructions?.[0]?.steps.map((step: any) => step.step) ||
+      [],
     tags: [
       ...(apiRecipe.vegetarian ? ["Vegetarian"] : []),
       ...(apiRecipe.vegan ? ["Vegan"] : []),
