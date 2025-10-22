@@ -1,9 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
 import recipesReducer from "../features/recipes/recipesSlice";
-import collectionReducer from "../features/collection/collectionSlice";
+import favoritesReducer from "../features/collection/collectionSlice";
 
 export const store = configureStore({
-  reducer: { recipes: recipesReducer, collection: collectionReducer },
+  reducer: {
+    recipes: recipesReducer,
+    favorites: favoritesReducer,
+  },
 });
 
 export type RootState = ReturnType<typeof store.getState>;

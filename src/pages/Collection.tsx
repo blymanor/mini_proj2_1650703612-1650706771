@@ -1,26 +1,63 @@
-import { useAppSelector, useAppDispatch } from "../app/hooks";
+import React, { useEffect } from "react";
+import { Link } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../app/hooks";
+import { fetchFavoriteRecipes } from "../features/recipes/recipesSlice";
 import RecipeCard from "../components/RecipeCard";
-import { clearFavorites } from "../features/collection/collectionSlice";
 
-export default function Collection() {
-  const favs = useAppSelector(s => s.collection.ids);
-  const items = useAppSelector(s => s.recipes.items);
+const LoadingSpinner = () => (
+  <div className="flex justify-center items-center h-64">
+    <span className="loading loading-lg loading-spinner text-primary"></span>
+  </div>
+);
+
+const ErrorMessage = ({ message }: { message: string }) => (
+  <div role="alert" className="alert alert-error">
+    <span>Error! {message}</span>
+  </div>
+);
+
+const Collection = () => {
   const dispatch = useAppDispatch();
-  const recipes = items.filter(r => favs.includes(r.id));
+  const { favoriteIds } = useAppSelector((s) => s.favorites);
+  const { favoriteDetails, favoritesStatus, error } = useAppSelector(
+    (s) => s.recipes
+  );
+
+  useEffect(() => {
+    dispatch(fetchFavoriteRecipes(favoriteIds));
+  }, [favoriteIds, dispatch]);
 
   return (
-    <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">My Cookbook</h1>
-        {favs.length>0 && <button className="btn btn-sm btn-outline" onClick={()=>dispatch(clearFavorites())}>Clear All</button>}
-      </div>
-      {recipes.length === 0 ? (
-        <div className="alert">ยังไม่มีเมนูที่บันทึกไว้ — ไปที่หน้า Recipes แล้วกด ☆ Save ได้เลย</div>
-      ) : (
-        <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {recipes.map(r => <RecipeCard key={r.id} r={r} />)}
-        </div>
+    <div className="p-4 md:p-8">
+      <h1 className="text-4xl font-bold mb-6 text-center">
+        My Personal Collection
+      </h1>
+      {favoritesStatus === "loading" && <LoadingSpinner />}
+      {favoritesStatus === "failed" && (
+        <ErrorMessage message={error || "Could not load your collection."} />
       )}
-    </section>
+      {favoritesStatus === "succeeded" && (
+        <>
+          {favoriteDetails.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {favoriteDetails.map((recipe) => (
+                <RecipeCard key={recipe.id} recipe={recipe} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-10">
+              <p className="text-lg">
+                You haven't added any recipes to your collection yet.
+              </p>
+              <Link to="/" className="btn btn-primary mt-4">
+                Explore Recipes
+              </Link>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
-}
+};
+
+export default Collection;

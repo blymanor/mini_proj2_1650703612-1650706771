@@ -1,26 +1,33 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-const KEY = "recipeShelf:favorites";
-type State = { ids: string[] };
-const load = (): State => {
-  try { return JSON.parse(localStorage.getItem(KEY) || '{"ids":[]}'); }
-  catch { return { ids: [] }; }
+interface FavoritesState {
+  favoriteIds: string[];
+}
+
+const initialState: FavoritesState = {
+  favoriteIds: JSON.parse(localStorage.getItem("favoriteRecipeIds") || "[]"),
 };
-const save = (s: State) => localStorage.setItem(KEY, JSON.stringify(s));
 
-const initialState: State = load();
-
-const slice = createSlice({
-  name: "collection",
+const favoritesSlice = createSlice({
+  name: "favorites",
   initialState,
   reducers: {
-    toggleFavorite: (state, action: PayloadAction<string>) => {
-      const id = action.payload;
-      state.ids = state.ids.includes(id) ? state.ids.filter(x => x !== id) : [...state.ids, id];
-      save(state);
+    toggleFavorite: (state: FavoritesState, action: PayloadAction<string>) => {
+      const recipeId = action.payload;
+      if (state.favoriteIds.includes(recipeId)) {
+        state.favoriteIds = state.favoriteIds.filter(
+          (id: string) => id !== recipeId
+        );
+      } else {
+        state.favoriteIds.push(recipeId);
+      }
+      localStorage.setItem(
+        "favoriteRecipeIds",
+        JSON.stringify(state.favoriteIds)
+      );
     },
-    clearFavorites: (state) => { state.ids = []; save(state); }
   },
 });
-export const { toggleFavorite, clearFavorites } = slice.actions;
-export default slice.reducer;
+
+export const { toggleFavorite } = favoritesSlice.actions;
+export default favoritesSlice.reducer;

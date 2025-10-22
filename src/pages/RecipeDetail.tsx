@@ -1,51 +1,107 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { useAppSelector, useAppDispatch } from "../app/hooks";
-import { useEffect } from "react";
-import { fetchRecipes } from "../features/recipes/recipesSlice";
+import React, { useEffect } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { useAppDispatch, useAppSelector } from "../app/hooks";
+import { fetchRecipeById } from "../features/recipes/recipesSlice";
 import { toggleFavorite } from "../features/collection/collectionSlice";
 
-export default function RecipeDetail() {
-  const { id } = useParams();
-  const dispatch = useAppDispatch();
+const LoadingSpinner = () => (
+  <div className="flex justify-center items-center h-64">
+    <span className="loading loading-lg loading-spinner text-primary"></span>
+  </div>
+);
+
+const ErrorMessage = ({ message }: { message: string }) => (
+  <div role="alert" className="alert alert-error">
+    <span>Error! {message}</span>
+  </div>
+);
+
+const RecipeDetail = () => {
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { items, status } = useAppSelector(s => s.recipes);
-  const favs = useAppSelector(s => s.collection.ids);
+  const dispatch = useAppDispatch();
+  const {
+    selectedRecipe: recipe,
+    detailStatus,
+    error,
+  } = useAppSelector((s) => s.recipes);
+  const isFavorite = useAppSelector((s) =>
+    s.favorites.favoriteIds.includes(id || "")
+  );
 
-  useEffect(() => { if (status==="idle") dispatch(fetchRecipes()); }, [status, dispatch]);
-  const r = items.find(x => x.id === id);
+  useEffect(() => {
+    if (id) {
+      dispatch(fetchRecipeById(id));
+    }
+  }, [id, dispatch]);
 
-  if (status==="loading") return <div className="loading loading-lg" />;
-  if (!r) return <div className="alert">Not found. <button className="link" onClick={()=>navigate(-1)}>Go back</button></div>;
-
-  const isFav = favs.includes(r.id);
+  if (detailStatus === "loading") return <LoadingSpinner />;
+  if (detailStatus === "failed")
+    return <ErrorMessage message={error || "Could not load recipe."} />;
+  if (!recipe) return <div className="text-center p-10">Recipe not found.</div>;
 
   return (
-    <article className="grid md:grid-cols-3 gap-6">
-      <div>
-        <div className="aspect-[4/3] bg-base-300 rounded-xl overflow-hidden">
-          {r.image ? <img src={r.image} alt={r.title} className="w-full h-full object-cover" /> : null}
-        </div>
-        <div className="mt-4 space-x-2">
-          <span className="badge badge-secondary">{r.time} min</span>
-          <span className="badge">{r.difficulty}</span>
-          <span className="badge badge-outline">{r.cuisine}</span>
-        </div>
-      </div>
-      <div className="md:col-span-2 space-y-3">
-        <h1 className="text-3xl font-bold">{r.title}</h1>
-        <p>{r.summary}</p>
-        <div className="flex gap-2">
-          <button className={`btn ${isFav?"btn-accent":"btn-outline"}`} onClick={()=>dispatch(toggleFavorite(r.id))}>
-            {isFav ? "★ In My Cookbook" : "☆ Save to My Cookbook"}
+    <div className="p-4 md:p-8">
+      <div className="card lg:card-side bg-base-100 shadow-xl">
+        <figure className="lg:w-1/3">
+          <img
+            src={recipe.image}
+            alt={recipe.title}
+            className="w-full h-full object-cover"
+          />
+        </figure>
+        <div className="card-body lg:w-2/3">
+          <h1 className="card-title text-4xl font-bold">{recipe.title}</h1>
+          <div className="flex flex-wrap gap-2 my-2">
+            <div className="badge badge-accent">{recipe.cuisine}</div>
+            <div className="badge badge-info">{recipe.difficulty}</div>
+            <div className="badge badge-ghost">🕒 {recipe.time} min</div>
+            <div className="badge badge-ghost">
+              🍽️ {recipe.servings} servings
+            </div>
+          </div>
+          <p className="py-4">{recipe.summary}</p>
+
+          <button
+            onClick={() => dispatch(toggleFavorite(recipe.id))}
+            className={`btn ${isFavorite ? "btn-secondary" : "btn-primary"}`}
+          >
+            {isFavorite ? "Remove from Collection" : "Add to Collection"}
           </button>
-          <Link to="/recipes" className="btn">Back</Link>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-6">
+            <div>
+              <h3 className="text-2xl font-semibold mb-3">Ingredients</h3>
+              <ul className="list-disc list-inside space-y-1">
+                {recipe.ingredients.map((ing, i) => (
+                  <li key={i}>{ing}</li>
+                ))}
+              </ul>
+            </div>
+            <div>
+              <h3 className="text-2xl font-semibold mb-3">Steps</h3>
+              {recipe.steps.length > 0 ? (
+                <ul className="steps steps-vertical">
+                  {recipe.steps.map((step, i) => (
+                    <li key={i} className="step step-primary">
+                      {step}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p>No instructions available.</p>
+              )}
+            </div>
+          </div>
+          <div className="card-actions justify-end mt-6">
+            <button onClick={() => navigate(-1)} className="btn">
+              Go Back
+            </button>
+          </div>
         </div>
-        <div className="divider" />
-        <h2 className="text-xl font-semibold">Ingredients</h2>
-        <ul className="list-disc ml-6 space-y-1">{r.ingredients.map((it,i)=><li key={i}>{it}</li>)}</ul>
-        <h2 className="text-xl font-semibold mt-4">Steps</h2>
-        <ol className="list-decimal ml-6 space-y-2">{r.steps.map((s,i)=><li key={i}>{s}</li>)}</ol>
       </div>
-    </article>
+    </div>
   );
-}
+};
+
+export default RecipeDetail;
